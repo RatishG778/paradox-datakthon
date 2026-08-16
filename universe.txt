@@ -1,0 +1,256 @@
+"use client";
+
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
+import * as THREE from "three";
+
+function DataParticles() {
+  const pointsRef = useRef<THREE.Points>(null);
+  const outerRef = useRef<THREE.Points>(null);
+
+  const { mouse } = useThree();
+
+  const innerParticles = useMemo(() => {
+    const count = 2800;
+    const positions = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      const radius = 2.6 + Math.random() * 1.6;
+
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      positions[i * 3] =
+        radius * Math.sin(phi) * Math.cos(theta);
+
+      positions[i * 3 + 1] =
+        radius * Math.sin(phi) * Math.sin(theta);
+
+      positions[i * 3 + 2] =
+        radius * Math.cos(phi);
+    }
+
+    return positions;
+  }, []);
+
+  const outerParticles = useMemo(() => {
+    const count = 900;
+    const positions = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      const radius = 4.5 + Math.random() * 3;
+
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      positions[i * 3] =
+        radius * Math.sin(phi) * Math.cos(theta);
+
+      positions[i * 3 + 1] =
+        radius * Math.sin(phi) * Math.sin(theta);
+
+      positions[i * 3 + 2] =
+        radius * Math.cos(phi);
+    }
+
+    return positions;
+  }, []);
+
+  useFrame((state, delta) => {
+    if (!pointsRef.current || !outerRef.current) return;
+
+    const time = state.clock.elapsedTime;
+
+    pointsRef.current.rotation.y += delta * 0.12;
+    pointsRef.current.rotation.x =
+      Math.sin(time * 0.25) * 0.08;
+
+    outerRef.current.rotation.y -= delta * 0.035;
+    outerRef.current.rotation.x += delta * 0.01;
+
+    // Mouse parallax
+    pointsRef.current.position.x +=
+      (mouse.x * 0.25 - pointsRef.current.position.x) *
+      0.02;
+
+    pointsRef.current.position.y +=
+      (mouse.y * 0.18 - pointsRef.current.position.y) *
+      0.02;
+  });
+
+  return (
+    <>
+      {/* Main data sphere */}
+      <points ref={pointsRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={innerParticles.length / 3}
+            array={innerParticles}
+            itemSize={3}
+          />
+        </bufferGeometry>
+
+        <pointsMaterial
+          color="#63e6ff"
+          size={0.035}
+          transparent
+          opacity={0.9}
+          sizeAttenuation
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
+
+      {/* Outer particle field */}
+      <points ref={outerRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={outerParticles.length / 3}
+            array={outerParticles}
+            itemSize={3}
+          />
+        </bufferGeometry>
+
+        <pointsMaterial
+          color="#ffffff"
+          size={0.018}
+          transparent
+          opacity={0.45}
+          sizeAttenuation
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
+    </>
+  );
+}
+
+function DataCore() {
+  const coreRef = useRef<THREE.Mesh>(null);
+
+  useFrame((state) => {
+    if (!coreRef.current) return;
+
+    const pulse =
+      1 + Math.sin(state.clock.elapsedTime * 2) * 0.08;
+
+    coreRef.current.scale.setScalar(pulse);
+  });
+
+  return (
+    <>
+      {/* Main core */}
+      <mesh ref={coreRef}>
+        <sphereGeometry args={[0.35, 32, 32]} />
+
+        <meshBasicMaterial
+          color="#9ff5ff"
+          transparent
+          opacity={0.95}
+        />
+      </mesh>
+
+      {/* Glow layers */}
+      <mesh scale={1.8}>
+        <sphereGeometry args={[0.35, 32, 32]} />
+
+        <meshBasicMaterial
+          color="#27d9ff"
+          transparent
+          opacity={0.12}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+
+      <mesh scale={3}>
+        <sphereGeometry args={[0.35, 32, 32]} />
+
+        <meshBasicMaterial
+          color="#27d9ff"
+          transparent
+          opacity={0.05}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+    </>
+  );
+}
+
+function OrbitRings() {
+  const ring1 = useRef<THREE.Mesh>(null);
+  const ring2 = useRef<THREE.Mesh>(null);
+
+  useFrame((_, delta) => {
+    if (!ring1.current || !ring2.current) return;
+
+    ring1.current.rotation.z += delta * 0.15;
+    ring1.current.rotation.x += delta * 0.04;
+
+    ring2.current.rotation.z -= delta * 0.1;
+    ring2.current.rotation.y += delta * 0.05;
+  });
+
+  return (
+    <>
+      <mesh ref={ring1} rotation={[1.2, 0.3, 0]}>
+        <torusGeometry args={[3.1, 0.008, 16, 180]} />
+
+        <meshBasicMaterial
+          color="#5ee7ff"
+          transparent
+          opacity={0.3}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+
+      <mesh ref={ring2} rotation={[0.3, 1.1, 0]}>
+        <torusGeometry args={[3.5, 0.006, 16, 180]} />
+
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.15}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </>
+  );
+}
+
+function Scene() {
+  return (
+    <group scale={1.45}>
+      <ambientLight intensity={0.5} />
+
+      <DataParticles />
+
+      <DataCore />
+
+      <OrbitRings />
+    </group>
+  );
+}
+
+export default function DataUniverse() {
+  return (
+    <div className="absolute inset-0">
+      <Canvas
+        camera={{
+          position: [0, 0, 10],
+          fov: 50,
+        }}
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: true,
+          alpha: true,
+        }}
+      >
+        <Scene />
+      </Canvas>
+    </div>
+  );
+}
