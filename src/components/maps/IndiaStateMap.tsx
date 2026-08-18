@@ -1,19 +1,20 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import India from "@svg-maps/india";
 
 interface IndiaStateMapProps {
   problemType?: string;
 }
 
-type IndiaLocation = {
+interface IndiaLocation {
   id: string;
   name: string;
   path: string;
-};
+}
 
-type StateInsight = {
+interface StateInsight {
   state: string;
   code: string;
   category: string;
@@ -21,35 +22,11 @@ type StateInsight = {
   intensity: number;
   description: string;
   focus: string;
-};
+}
 
-/*
- * ---------------------------------------------------------
- * INDIA MAP DATA
- * ---------------------------------------------------------
- *
- * IMPORTANT:
- * Keep your existing India object/import if you already
- * have it in this file.
- *
- * Expected structure:
- *
- * India = {
- *   viewBox: "...",
- *   locations: [
- *     {
- *       id: "...",
- *       name: "...",
- *       path: "..."
- *     }
- *   ]
- * }
- *
- * Replace this import path only if your existing project
- * stores the India map data somewhere else.
- */
-
-import India from "@svg-maps/india";
+/* =========================================================
+   STATE INTELLIGENCE
+========================================================= */
 
 const stateInsights: Record<string, StateInsight> = {
   "Tamil Nadu": {
@@ -232,7 +209,7 @@ const stateInsights: Record<string, StateInsight> = {
       "Agriculture · Roads · Climate",
   },
 
-  "Chhattisgarh": {
+  Chhattisgarh: {
     state: "Chhattisgarh",
     code: "CG",
     category: "Industrial & Resource Intelligence",
@@ -257,102 +234,132 @@ const defaultInsight: StateInsight = {
     "Justice · Agriculture · Railways · Disaster · Finance · Energy",
 };
 
-const getIntensityLabel = (value: number) => {
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function getIntensityLabel(value: number) {
   if (value >= 85) return "HIGH";
   if (value >= 70) return "MEDIUM";
   return "EMERGING";
-};
+}
 
-export default function IndiaStateMap(
-    { problemType }: IndiaStateMapProps
+function getFill(
+  location: string,
+  highlighted: boolean,
+  hovered: boolean,
+  selected: boolean
 ) {
+  if (selected) return "#67e8f9";
+  if (hovered) return "#a5f3fc";
+
+  if (highlighted) {
+    const intensity =
+      stateInsights[location]?.intensity ?? 50;
+
+    const opacity =
+      0.26 + (intensity / 100) * 0.28;
+
+    return `rgba(38,190,214,${opacity})`;
+  }
+
+  return "rgba(255,255,255,0.11)";
+}
+
+/* =========================================================
+   COMPONENT
+========================================================= */
+
+export default function IndiaStateMap({
+  problemType,
+}: IndiaStateMapProps) {
   const [hoveredState, setHoveredState] =
     useState<string | null>(null);
 
   const [selectedState, setSelectedState] =
     useState<string | null>(null);
 
-  /*
-   * States that should initially have stronger visual
-   * treatment.
-   */
   const highlighted = useMemo(
-    () => [
-      "Tamil Nadu",
-      "Maharashtra",
-      "Karnataka",
-      "Uttar Pradesh",
-      "Odisha",
-      "Gujarat",
-    ],
+    () =>
+      new Set([
+        "Tamil Nadu",
+        "Maharashtra",
+        "Karnataka",
+        "Uttar Pradesh",
+        "Odisha",
+        "Gujarat",
+      ]),
     []
   );
 
   const activeState =
-    selectedState ??
-    hoveredState ??
-    null;
+    selectedState ?? hoveredState;
 
   const activeInsight =
-    activeState
-      ? stateInsights[activeState] ?? {
-          ...defaultInsight,
-          state: activeState,
-          code: activeState
-            .slice(0, 2)
-            .toUpperCase(),
-          category: "Regional Intelligence",
-          problemCount: 1,
-          intensity: 55,
-        }
+    activeState && stateInsights[activeState]
+      ? stateInsights[activeState]
       : defaultInsight;
 
   return (
     <div className="relative w-full">
 
-      {/* =================================================
-          HEADER
-          ================================================= */}
+      {/* =====================================================
+          COMPACT HEADER
+      ====================================================== */}
 
-      <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+      <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] px-4 py-4 sm:px-6 md:px-7">
 
-        <div>
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="h-px w-6 shrink-0 bg-cyan-300" />
 
-          <div className="flex items-center gap-3">
-
-            <span className="h-px w-8 bg-cyan-300" />
-
-            <p className="font-mono text-[9px] uppercase tracking-[0.4em] text-cyan-300">
-              India Intelligence Grid
-            </p>
-
-          </div>
-
-          <h3 className="mt-5 text-3xl font-black tracking-[-0.05em] text-white md:text-5xl">
-            PROBLEMS
-            <span className="text-white/20">
-              {" "}
-              ACROSS INDIA.
-            </span>
-          </h3>
-
+          <p className="truncate font-mono text-[7px] uppercase tracking-[0.35em] text-cyan-300">
+            India Intelligence Grid
+          </p>
         </div>
 
-        <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/20">
-          {India.locations.length} STATES / UT REGIONS
-        </div>
+        <p className="hidden shrink-0 font-mono text-[7px] uppercase tracking-[0.25em] text-white/25 sm:block">
+          36 STATES / UT
+        </p>
 
       </div>
 
-      {/* =================================================
-          MAIN MAP AREA
-          ================================================= */}
+      {/* =====================================================
+          MAP + INTELLIGENCE
+      ====================================================== */}
 
-      <div className="grid items-center gap-8 rounded-[2rem] border border-white/[0.07] bg-[#05090d]/80 p-5 backdrop-blur-xl md:p-8 lg:grid-cols-[1.25fr_0.75fr]">
+      <div
+        className="
+          grid
+          min-w-0
+          lg:grid-cols-[minmax(0,1.2fr)_minmax(270px,0.65fr)]
+        "
+      >
 
-        {/* MAP */}
+        {/* ===================================================
+            MAP
+        ==================================================== */}
 
-        <div className="relative flex min-h-[450px] items-center justify-center overflow-hidden rounded-[1.5rem] border border-white/[0.04] bg-[#020609] md:min-h-[600px]">
+        <div
+          className="
+            relative
+            flex
+            min-w-0
+            items-center
+            justify-center
+            overflow-hidden
+            border-b
+            border-white/[0.07]
+            bg-[#020608]
+            px-3
+            py-6
+            sm:px-6
+            sm:py-7
+            lg:border-b-0
+            lg:border-r
+            lg:px-7
+            lg:py-8
+          "
+        >
 
           {/* GRID */}
 
@@ -361,227 +368,201 @@ export default function IndiaStateMap(
             style={{
               backgroundImage:
                 "linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px)",
-              backgroundSize: "40px 40px",
+              backgroundSize: "42px 42px",
             }}
           />
 
-          {/* RADIAL GLOW */}
+          {/* GLOW */}
 
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[350px] w-[350px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/[0.035] blur-[100px]" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[260px] w-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/[0.04] blur-[90px] sm:h-[340px] sm:w-[270px]" />
 
-          <svg
-            viewBox={India.viewBox}
-            className="relative z-10 h-full w-full max-w-[650px] px-6 py-8 md:px-10"
-            role="img"
-            aria-label="Interactive map of India"
-          >
+          {/* SVG */}
 
-            {India.locations.map(
-              (location: IndiaLocation) => {
+          <div className="relative z-10 w-full max-w-[390px] sm:max-w-[440px] md:max-w-[470px] lg:max-w-[500px]">
 
-                const isHighlighted =
-                  highlighted.includes(
-                    location.name
-                  );
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox={India.viewBox}
+              preserveAspectRatio="xMidYMid meet"
+              role="img"
+              aria-label="Interactive map of India"
+              className="block h-auto w-full"
+            >
+              {India.locations.map(
+                (location: IndiaLocation) => {
+                  const isSelected =
+                    selectedState ===
+                    location.name;
 
-                const isHovered =
-                  hoveredState ===
-                  location.name;
+                  const isHovered =
+                    hoveredState ===
+                    location.name;
 
-                const isSelected =
-                  selectedState ===
-                  location.name;
+                  const isHighlighted =
+                    highlighted.has(
+                      location.name
+                    );
 
-                const insight =
-                  stateInsights[
-                    location.name
-                  ];
-
-                const intensity =
-                  insight?.intensity ?? 40;
-
-                return (
-                  <motion.path
-                    key={location.id}
-                    d={location.path}
-                    initial={{
-                      opacity: 0,
-                    }}
-                    animate={{
-                      opacity:
-                        isSelected ||
-                        isHovered
-                          ? 1
-                          : isHighlighted
-                            ? 0.82
-                            : 0.55,
-                    }}
-                    transition={{
-                      duration: 0.25,
-                    }}
-                    fill={
-                      isSelected
-                        ? "#63e6ff"
-                        : isHovered
-                          ? "#9ff5ff"
-                          : isHighlighted
-                            ? `rgba(99,230,255,${Math.max(
-                                0.1,
-                                intensity / 1000
-                              )})`
-                            : "rgba(255,255,255,0.025)"
-                    }
-                    stroke={
-                      isSelected ||
-                      isHovered
-                        ? "#9ff5ff"
-                        : isHighlighted
-                          ? "rgba(99,230,255,0.55)"
-                          : "rgba(255,255,255,0.12)"
-                    }
-                    strokeWidth={
-                      isSelected
-                        ? 1.8
-                        : isHovered
-                          ? 1.5
-                          : 0.8
-                    }
-                    className="cursor-pointer outline-none transition-colors"
-                    onMouseEnter={() =>
-                      setHoveredState(
-                        location.name
-                      )
-                    }
-                    onMouseLeave={() =>
-                      setHoveredState(null)
-                    }
-                    onClick={() =>
-                      setSelectedState(
-                        location.name
-                      )
-                    }
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key ===
-                          "Enter" ||
-                        event.key === " "
-                      ) {
-                        event.preventDefault();
-
+                  return (
+                    <path
+                      key={location.id}
+                      d={location.path}
+                      fill={getFill(
+                        location.name,
+                        isHighlighted,
+                        isHovered,
+                        isSelected
+                      )}
+                      stroke={
+                        isSelected
+                          ? "#ffffff"
+                          : isHovered
+                            ? "#67e8f9"
+                            : isHighlighted
+                              ? "rgba(103,232,249,0.9)"
+                              : "rgba(180,210,218,0.6)"
+                      }
+                      strokeWidth={
+                        isSelected
+                          ? 1.8
+                          : isHovered
+                            ? 1.4
+                            : 0.75
+                      }
+                      vectorEffect="non-scaling-stroke"
+                      className="cursor-pointer outline-none"
+                      style={{
+                        transition:
+                          "fill 180ms ease, stroke 180ms ease",
+                      }}
+                      onMouseEnter={() =>
+                        setHoveredState(
+                          location.name
+                        )
+                      }
+                      onMouseLeave={() =>
+                        setHoveredState(null)
+                      }
+                      onClick={() =>
                         setSelectedState(
                           location.name
-                        );
+                        )
                       }
-                    }}
-                  />
-                );
-              }
-            )}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key ===
+                            "Enter" ||
+                          event.key === " "
+                        ) {
+                          event.preventDefault();
 
-          </svg>
+                          setSelectedState(
+                            location.name
+                          );
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-label={`Select ${location.name}`}
+                    />
+                  );
+                }
+              )}
+            </svg>
 
-          {/* MAP LABEL */}
-
-          <div className="pointer-events-none absolute bottom-5 left-5 font-mono text-[7px] uppercase tracking-[0.3em] text-white/15">
-            SELECT A STATE
           </div>
 
-          <div className="pointer-events-none absolute right-5 top-5 font-mono text-[7px] uppercase tracking-[0.3em] text-cyan-300/30">
-            LIVE DATA GRID
+          {/* LIVE INDICATOR */}
+
+          <div className="pointer-events-none absolute left-4 top-4 z-20 rounded-lg border border-white/[0.08] bg-black/60 px-3 py-2 backdrop-blur-md">
+
+            <div className="flex items-center gap-2">
+
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300 shadow-[0_0_10px_#67e8f9]" />
+
+              <span className="font-mono text-[6px] uppercase tracking-[0.28em] text-cyan-300/75">
+                Live Data Grid
+              </span>
+
+            </div>
+
+          </div>
+
+          {/* STATE LABEL */}
+
+          <div className="pointer-events-none absolute bottom-4 left-4 z-20 rounded-md border border-white/[0.07] bg-black/60 px-3 py-2 backdrop-blur-md">
+
+            <p className="font-mono text-[6px] uppercase tracking-[0.25em] text-white/40">
+              {activeState ??
+                "Select a state"}
+            </p>
+
           </div>
 
         </div>
 
-        {/* =================================================
-            STATE INFORMATION PANEL
-            ================================================= */}
+        {/* ===================================================
+            INTELLIGENCE
+        ==================================================== */}
 
-        <div className="relative min-h-[450px] rounded-[1.5rem] border border-white/[0.06] bg-white/[0.015] p-6 md:p-8">
+        <div className="min-w-0 bg-[#05090d] p-5 sm:p-6 md:p-7">
 
-          {/* TOP */}
+          <div className="flex items-center justify-between gap-4">
 
-          <div className="flex items-center justify-between">
-
-            <p className="font-mono text-[8px] uppercase tracking-[0.3em] text-white/20">
+            <p className="font-mono text-[7px] uppercase tracking-[0.3em] text-white/35">
               State Intelligence
             </p>
 
-            <span className="paradox-status font-mono text-[8px] uppercase tracking-[0.2em] text-cyan-300/60">
+            <span className="font-mono text-[7px] uppercase tracking-[0.2em] text-cyan-300/75">
               {activeState
-                ? "SELECTED"
-                : "NATIONAL"}
+                ? "Selected"
+                : "National"}
             </span>
 
           </div>
 
-          {/* STATE */}
+          <div className="mt-6">
 
-          <AnimatePresence mode="wait">
+            <p className="font-mono text-3xl font-black tracking-[-0.05em] text-cyan-300 sm:text-4xl">
+              {activeInsight.code}
+            </p>
 
-            <motion.div
-              key={activeInsight.state}
-              initial={{
-                opacity: 0,
-                y: 15,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                y: -10,
-              }}
-              transition={{
-                duration: 0.25,
-              }}
-              className="mt-12"
-            >
+            <h4 className="mt-2 text-2xl font-black tracking-[-0.04em] text-white sm:text-3xl">
+              {activeInsight.state}
+            </h4>
 
-              <p className="font-mono text-4xl font-black tracking-[-0.06em] text-cyan-300">
-                {activeInsight.code}
-              </p>
+            <p className="mt-2 text-[7px] font-bold uppercase tracking-[0.25em] text-white/45">
+              {activeInsight.category}
+            </p>
 
-              <h4 className="mt-3 text-3xl font-black tracking-[-0.04em] text-white">
-                {activeInsight.state}
-              </h4>
+            <p className="mt-5 text-xs leading-6 text-white/55">
+              {activeInsight.description}
+            </p>
 
-              <p className="mt-3 text-[9px] font-bold uppercase tracking-[0.25em] text-white/25">
-                {activeInsight.category}
-              </p>
-
-              <p className="mt-7 text-sm leading-7 text-white/35">
-                {activeInsight.description}
-              </p>
-
-            </motion.div>
-
-          </AnimatePresence>
+          </div>
 
           {/* METRICS */}
 
-          <div className="mt-10 grid grid-cols-2 gap-3">
+          <div className="mt-6 grid grid-cols-2 gap-2">
 
-            <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="rounded-xl border border-white/[0.08] bg-black/25 p-3">
 
-              <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/20">
+              <p className="font-mono text-[6px] uppercase tracking-[0.2em] text-white/35">
                 Problem Nodes
               </p>
 
-              <p className="mt-3 text-2xl font-black text-white">
+              <p className="mt-2 text-2xl font-black text-white">
                 {activeInsight.problemCount}
               </p>
 
             </div>
 
-            <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="rounded-xl border border-cyan-300/[0.10] bg-cyan-300/[0.025] p-3">
 
-              <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/20">
+              <p className="font-mono text-[6px] uppercase tracking-[0.2em] text-white/35">
                 Intensity
               </p>
 
-              <p className="mt-3 text-2xl font-black text-cyan-300">
+              <p className="mt-2 text-2xl font-black text-cyan-300">
                 {activeInsight.intensity}%
               </p>
 
@@ -589,17 +570,17 @@ export default function IndiaStateMap(
 
           </div>
 
-          {/* INTENSITY BAR */}
+          {/* INTENSITY */}
 
-          <div className="mt-8">
+          <div className="mt-6">
 
             <div className="flex items-center justify-between">
 
-              <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/20">
+              <p className="font-mono text-[6px] uppercase tracking-[0.25em] text-white/35">
                 Challenge Intensity
               </p>
 
-              <p className="font-mono text-[8px] text-cyan-300">
+              <p className="font-mono text-[6px] font-bold text-cyan-300">
                 {getIntensityLabel(
                   activeInsight.intensity
                 )}
@@ -607,7 +588,7 @@ export default function IndiaStateMap(
 
             </div>
 
-            <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
 
               <motion.div
                 initial={{
@@ -617,9 +598,9 @@ export default function IndiaStateMap(
                   width: `${activeInsight.intensity}%`,
                 }}
                 transition={{
-                  duration: 0.6,
+                  duration: 0.55,
                 }}
-                className="h-full rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(99,230,255,0.6)]"
+                className="h-full rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.65)]"
               />
 
             </div>
@@ -628,26 +609,58 @@ export default function IndiaStateMap(
 
           {/* FOCUS */}
 
-          <div className="mt-8 border-t border-white/[0.06] pt-6">
+          <div className="mt-6 border-t border-white/[0.07] pt-5">
 
-            <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/20">
+            <p className="font-mono text-[6px] uppercase tracking-[0.25em] text-white/35">
               Intelligence Focus
             </p>
 
-            <p className="mt-3 text-xs leading-6 text-white/35">
+            <p className="mt-2 text-[11px] leading-5 text-white/50">
               {activeInsight.focus}
             </p>
 
           </div>
 
+          {/* PROBLEM TYPE */}
+
+          {problemType && (
+            <div className="mt-5 rounded-lg border border-cyan-300/[0.08] bg-cyan-300/[0.02] p-3">
+
+              <p className="font-mono text-[6px] uppercase tracking-[0.25em] text-cyan-300/55">
+                Active Domain
+              </p>
+
+              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white/60">
+                {problemType}
+              </p>
+
+            </div>
+          )}
+
           {/* RESET */}
 
           {selectedState && (
             <button
+              type="button"
               onClick={() =>
                 setSelectedState(null)
               }
-              className="mt-7 rounded-full border border-white/10 px-4 py-2 font-mono text-[7px] uppercase tracking-[0.25em] text-white/30 transition hover:border-cyan-300/30 hover:text-cyan-300"
+              className="
+                mt-5
+                rounded-full
+                border
+                border-white/10
+                px-3
+                py-1.5
+                font-mono
+                text-[6px]
+                uppercase
+                tracking-[0.25em]
+                text-white/40
+                transition
+                hover:border-cyan-300/30
+                hover:text-cyan-300
+              "
             >
               Reset National View
             </button>
@@ -657,48 +670,34 @@ export default function IndiaStateMap(
 
       </div>
 
-      {/* =================================================
-          LEGEND
-          ================================================= */}
+      {/* =====================================================
+          MOBILE / BOTTOM LEGEND
+      ====================================================== */}
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/[0.05] bg-[#05090d]/60 px-5 py-4">
+      <div className="flex items-center justify-between gap-4 border-t border-white/[0.07] bg-[#05090d] px-4 py-3 sm:px-6 md:px-7">
 
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-4">
 
           <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
 
-            <span className="h-2 w-2 rounded-full bg-cyan-300" />
-
-            <span className="font-mono text-[7px] uppercase tracking-[0.2em] text-white/25">
-              High Priority
+            <span className="font-mono text-[6px] uppercase tracking-[0.2em] text-white/30">
+              Priority
             </span>
-
           </div>
 
           <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
 
-            <span className="h-2 w-2 rounded-full bg-cyan-300/50" />
-
-            <span className="font-mono text-[7px] uppercase tracking-[0.2em] text-white/25">
-              Emerging
-            </span>
-
-          </div>
-
-          <div className="flex items-center gap-2">
-
-            <span className="h-2 w-2 rounded-full bg-white/20" />
-
-            <span className="font-mono text-[7px] uppercase tracking-[0.2em] text-white/25">
+            <span className="font-mono text-[6px] uppercase tracking-[0.2em] text-white/30">
               Regional
             </span>
-
           </div>
 
         </div>
 
-        <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/15">
-          DATA → INSIGHT → ACTION
+        <p className="font-mono text-[6px] uppercase tracking-[0.2em] text-white/20">
+          Data → Insight → Action
         </p>
 
       </div>

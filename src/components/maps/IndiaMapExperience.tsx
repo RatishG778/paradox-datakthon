@@ -13,17 +13,35 @@ export default function IndiaMapExperience({
   problemType,
 }: IndiaMapExperienceProps) {
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div
+      className="
+        relative
+        w-full
+        overflow-hidden
+        rounded-[1.25rem]
+        bg-[#020608]
+        md:rounded-[1.5rem]
+      "
+    >
 
       {/* ATMOSPHERE */}
 
-      <div className="pointer-events-none absolute inset-0 z-0">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          hidden
+          opacity-40
+          md:block
+        "
+      >
         <Canvas
           camera={{
             position: [0, 0, 8],
             fov: 45,
           }}
-          dpr={[1, 1.5]}
+          dpr={[1, 1.15]}
           gl={{
             antialias: true,
             alpha: true,
@@ -34,21 +52,28 @@ export default function IndiaMapExperience({
         </Canvas>
       </div>
 
-      {/* REAL INDIA MAP */}
+      {/* BACKGROUND */}
 
-      <div className="absolute inset-0 z-10">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.035),transparent_65%)]
+        "
+      />
+
+      {/* =====================================================
+          CONTROLLED MAP CONTENT
+      ====================================================== */}
+
+      <div className="relative z-10 w-full">
+
         <IndiaStateMap
           problemType={problemType}
         />
+
       </div>
-
-      {/* CENTER GLOW */}
-
-      <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/[0.035] blur-[100px]" />
-
-      {/* SCANNING LINE */}
-
-      <div className="pointer-events-none absolute inset-x-10 top-1/2 z-20 h-px bg-gradient-to-r from-transparent via-cyan-300/20 to-transparent" />
 
     </div>
   );
