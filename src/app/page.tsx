@@ -1,597 +1,848 @@
 "use client";
 
-import Navbar from "../components/navbar/Navbar";
+import { useEffect, useState } from "react";
 
-import DataUniverse from "../components/3d/DataUniverse";
+import ParadoxWorld from "../components/v2/experience/ParadoxWorld";
 
-import Introduction from "../components/sections/Introduction";
-import About from "../components/sections/About";
-import Paradox from "../components/sections/Paradox";
-import Problems from "../components/sections/Problems";
-import Rules from "../components/sections/Rules";
-import Prizes from "../components/sections/Prizes";
-import Timeline from "../components/sections/Timeline";
-import Team from "../components/sections/Team";
-import Registration from "../components/sections/Registration";
-import Contact from "../components/sections/Contact";
+import StateNodeOverlay from "../components/v2/experience/StateNodeOverlay";
 
-import { motion } from "framer-motion";
+import type {
+  NetworkNode,
+} from "../components/v2/experience/DataNetwork";
+
+import ProblemReveal from "../components/v2/storytelling/ProblemReveal";
 
 export default function Home() {
+  /* =====================================================
+     STATE
+  ===================================================== */
+
+  const [hoveredState, setHoveredState] =
+    useState<NetworkNode | null>(null);
+
+  const [selectedState, setSelectedState] =
+    useState<NetworkNode | null>(null);
+
+  const [scrollProgress, setScrollProgress] =
+    useState(0);
+
+  const [overlayPosition, setOverlayPosition] =
+    useState({
+      x: 0,
+      y: 0,
+    });
+
+
+  /* =====================================================
+     SCROLL PROGRESS
+  ===================================================== */
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const documentHeight =
+        document.documentElement.scrollHeight;
+
+      const viewportHeight =
+        window.innerHeight;
+
+      const maximumScroll =
+        documentHeight - viewportHeight;
+
+      if (maximumScroll <= 0) {
+        setScrollProgress(0);
+        return;
+      }
+
+      const progress =
+        window.scrollY / maximumScroll;
+
+      setScrollProgress(
+        Math.min(
+          1,
+          Math.max(0, progress)
+        )
+      );
+    };
+
+    handleScroll();
+
+    window.addEventListener(
+      "scroll",
+      handleScroll,
+      {
+        passive: true,
+      }
+    );
+
+    return () => {
+      window.removeEventListener(
+        "scroll",
+        handleScroll
+      );
+    };
+  }, []);
+
+
+  /* =====================================================
+     STATE HOVER
+  ===================================================== */
+
+  const handleHoverState = (
+    node: NetworkNode | null
+  ) => {
+    setHoveredState(node);
+
+    if (!node) {
+      return;
+    }
+
+    const isMobile =
+      window.innerWidth < 768;
+
+    if (isMobile) {
+      setOverlayPosition({
+        x: window.innerWidth / 2,
+        y: window.innerHeight - 170,
+      });
+    } else {
+      setOverlayPosition({
+        x: window.innerWidth * 0.76,
+        y: window.innerHeight * 0.48,
+      });
+    }
+  };
+
+
+  /* =====================================================
+     STATE SELECT
+  ===================================================== */
+
+  const handleSelectState = (
+    node: NetworkNode
+  ) => {
+    setSelectedState(node);
+
+    window.setTimeout(() => {
+      document
+        .getElementById(
+          "problem-intelligence"
+        )
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 150);
+  };
+
+
+  /* =====================================================
+     EXPLORE STATE
+  ===================================================== */
+
+  const handleExploreState = () => {
+    if (!hoveredState) {
+      return;
+    }
+
+    setSelectedState(
+      hoveredState
+    );
+
+    window.setTimeout(() => {
+      document
+        .getElementById(
+          "problem-intelligence"
+        )
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 150);
+  };
+
+
+  /* =====================================================
+     PAGE
+  ===================================================== */
+
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#020609] text-white">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#f2efe7] text-[#17211b]">
 
-      {/* =====================================================
-          GLOBAL 3D DATA UNIVERSE
-          ===================================================== */}
+      {/* =================================================
+          3D EXPERIENCE
+      ================================================= */}
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <DataUniverse />
-      </div>
+      <ParadoxWorld
+        activeState={
+          selectedState?.id ?? null
+        }
+        onHoverState={
+          handleHoverState
+        }
+        onSelectState={
+          handleSelectState
+        }
+      />
 
-      {/* =====================================================
-          NAVIGATION
-          ===================================================== */}
 
-      <div className="relative z-[100]">
-        <Navbar />
-      </div>
+      {/* =================================================
+          STATE INFORMATION OVERLAY
+      ================================================= */}
 
-      {/* =====================================================
-          MAIN WEBSITE
-          ===================================================== */}
+      <StateNodeOverlay
+        state={
+          hoveredState
+            ? {
+                id: hoveredState.id,
+                name: hoveredState.name,
+                intensity:
+                  hoveredState.intensity,
+                challenges:
+                  hoveredState.challenges,
+              }
+            : null
+        }
+        position={
+          overlayPosition
+        }
+        visible={
+          hoveredState !== null
+        }
+        onExplore={
+          handleExploreState
+        }
+      />
 
-      <div className="relative z-10">
 
-        {/* ===================================================
-            HERO
-            =================================================== */}
+      {/* =================================================
+          TOP NAVIGATION
+      ================================================= */}
 
-        <section
-          id="home"
-          className="paradox-hero relative flex min-h-screen items-center overflow-hidden"
-        >
+      <header className="pointer-events-none fixed left-0 right-0 top-0 z-40">
 
-          {/* HERO ATMOSPHERE */}
+        <div className="flex items-center justify-between px-6 py-6 md:px-10 md:py-8">
 
-          <div className="pointer-events-none absolute inset-0">
+          {/* LOGO */}
 
-            {/* Main glow */}
+          <div className="pointer-events-auto">
 
-            <div className="absolute left-1/2 top-[42%] h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/[0.035] blur-[130px]" />
+            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.35em] text-[#17211b]">
+              PARADOX
+            </p>
 
-            {/* Grid */}
+            <p className="mt-1 font-mono text-[7px] uppercase tracking-[0.25em] text-[#7b8179]">
+              National Datathon
+            </p>
+
+          </div>
+
+
+          {/* NAV */}
+
+          <nav className="pointer-events-auto hidden items-center gap-8 md:flex">
+
+            <a
+              href="#scale"
+              className="font-mono text-[8px] font-bold uppercase tracking-[0.25em] text-[#596158] transition-colors hover:text-[#b44735]"
+            >
+              The Scale
+            </a>
+
+            <a
+              href="#problems"
+              className="font-mono text-[8px] font-bold uppercase tracking-[0.25em] text-[#596158] transition-colors hover:text-[#b44735]"
+            >
+              Problems
+            </a>
+
+            <a
+              href="#how-it-works"
+              className="font-mono text-[8px] font-bold uppercase tracking-[0.25em] text-[#596158] transition-colors hover:text-[#b44735]"
+            >
+              How It Works
+            </a>
+
+            <a
+              href="#register"
+              className="border border-[#17211b] px-4 py-2 font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-[#17211b] transition-colors hover:bg-[#17211b] hover:text-[#faf8f2]"
+            >
+              Enter
+            </a>
+
+          </nav>
+
+        </div>
+
+      </header>
+
+
+      {/* =================================================
+          EXPERIENCE PROGRESS
+      ================================================= */}
+
+      <div className="pointer-events-none fixed bottom-5 left-1/2 z-40 hidden w-[220px] -translate-x-1/2 md:block">
+
+        <div className="flex items-center gap-3">
+
+          <span className="font-mono text-[8px] font-bold tracking-[0.25em] text-[#596158]">
+            EXPLORE
+          </span>
+
+          <div className="h-px flex-1 bg-[#cfc8ba]">
 
             <div
-              className="absolute inset-0 opacity-[0.025]"
+              className="h-full bg-[#b44735] transition-[width] duration-150"
               style={{
-                backgroundImage:
-                  "linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px)",
-                backgroundSize: "80px 80px",
+                width: `${scrollProgress * 100}%`,
               }}
             />
 
-            {/* Horizontal line */}
-
-            <div className="absolute left-0 right-0 top-[48%] h-px bg-gradient-to-r from-transparent via-cyan-300/10 to-transparent" />
-
-            {/* Vertical line */}
-
-            <div className="absolute bottom-0 left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-cyan-300/[0.08] to-transparent" />
-
           </div>
 
-          {/* HERO CONTENT */}
+          <span className="font-mono text-[8px] font-bold text-[#596158]">
+            {String(
+              Math.round(
+                scrollProgress * 100
+              )
+            ).padStart(2, "0")}
+          </span>
 
-          <div className="relative z-20 mx-auto w-full max-w-[1500px] px-6 pt-24">
+        </div>
 
-            <div className="grid min-h-screen items-center lg:grid-cols-[1.05fr_0.95fr]">
+      </div>
 
-              {/* ============================================
-                  LEFT
-                  ============================================ */}
 
-              <div className="relative">
+      {/* =================================================
+          HERO
+      ================================================= */}
 
-                {/* STATUS */}
+      <section className="relative z-10 flex min-h-screen items-center px-6 pb-20 pt-32 md:px-16">
 
-                <motion.div
-                  initial={{
-                    opacity: 0,
-                    y: 20,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  transition={{
-                    duration: 0.7,
-                    delay: 0.15,
-                  }}
-                  className="flex items-center gap-4"
-                >
+        <div className="mx-auto w-full max-w-[1500px]">
 
-                  <span className="paradox-status font-mono text-[8px] uppercase tracking-[0.4em] text-white/35">
-                    Registration / Coming Soon
-                  </span>
+          <div className="max-w-5xl">
 
-                </motion.div>
+            {/* LABEL */}
 
-                {/* TITLE */}
+            <div className="flex items-center gap-4">
 
-                <div className="mt-10 overflow-hidden">
+              <span className="h-px w-10 bg-[#b44735]" />
 
-                  <motion.h1
-                    initial={{
-                      opacity: 0,
-                      y: "100%",
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      duration: 1,
-                      delay: 0.25,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className="text-[clamp(5rem,14vw,13rem)] font-black leading-[0.7] tracking-[-0.1em]"
-                  >
-                    PARA
-                  </motion.h1>
-
-                </div>
-
-                <div className="overflow-hidden">
-
-                  <motion.h1
-                    initial={{
-                      opacity: 0,
-                      y: "100%",
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      duration: 1,
-                      delay: 0.35,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className="paradox-muted-title text-[clamp(5rem,14vw,13rem)] font-black leading-[0.7] tracking-[-0.1em]"
-                  >
-                    DOX.
-                  </motion.h1>
-
-                </div>
-
-                {/* TAGLINE */}
-
-                <motion.div
-                  initial={{
-                    opacity: 0,
-                    y: 25,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  transition={{
-                    duration: 0.7,
-                    delay: 0.7,
-                  }}
-                  className="mt-10"
-                >
-
-                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300 md:text-sm">
-                    DATA × INTELLIGENCE × IMPACT
-                  </p>
-
-                  <p className="mt-5 max-w-xl text-sm leading-7 text-white/35 md:text-base md:leading-8">
-                    A student-driven DataKthon where real-world
-                    problems meet data, technology and
-                    unconventional thinking.
-                  </p>
-
-                </motion.div>
-
-                {/* CTA */}
-
-                <motion.div
-                  initial={{
-                    opacity: 0,
-                    y: 25,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  transition={{
-                    duration: 0.7,
-                    delay: 0.9,
-                  }}
-                  className="mt-9 flex flex-wrap gap-3"
-                >
-
-                  <a
-                    href="#problems"
-                    className="group inline-flex items-center gap-4 rounded-full bg-cyan-300 px-6 py-3.5 text-[9px] font-black uppercase tracking-[0.25em] text-black transition duration-300 hover:scale-[1.04] hover:bg-white"
-                  >
-                    Explore Challenges
-
-                    <span className="transition-transform duration-300 group-hover:translate-x-1">
-                      →
-                    </span>
-                  </a>
-
-                  <a
-                    href="#registration"
-                    className="inline-flex items-center gap-4 rounded-full border border-white/10 bg-white/[0.025] px-6 py-3.5 text-[9px] font-black uppercase tracking-[0.25em] text-white/50 transition duration-300 hover:border-cyan-300/30 hover:text-cyan-300"
-                  >
-                    Register Your Team
-                  </a>
-
-                </motion.div>
-
-              </div>
-
-              {/* ============================================
-                  RIGHT — DATA IDENTITY
-                  ============================================ */}
-
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  scale: 0.9,
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                }}
-                transition={{
-                  duration: 1.2,
-                  delay: 0.35,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="relative hidden h-[650px] lg:block"
-              >
-
-                {/* ORBITS */}
-
-                <div className="absolute left-1/2 top-1/2 h-[430px] w-[430px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/[0.08]" />
-
-                <div className="absolute left-1/2 top-1/2 h-[330px] w-[330px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.05]" />
-
-                {/* CORE */}
-
-                <motion.div
-                  animate={{
-                    scale: [1, 1.08, 1],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute left-1/2 top-1/2 z-10 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.035] shadow-[0_0_80px_rgba(99,230,255,0.08)]"
-                >
-
-                  <div className="h-3 w-3 rounded-full bg-cyan-300 shadow-[0_0_25px_#63e6ff]" />
-
-                </motion.div>
-
-                {/* DATA NODE 1 */}
-
-                <motion.div
-                  animate={{
-                    y: [0, -12, 0],
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute left-[8%] top-[25%] rounded-xl border border-white/[0.08] bg-[#05090d]/80 px-4 py-3 backdrop-blur-md"
-                >
-
-                  <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/20">
-                    DATA
-                  </p>
-
-                  <p className="mt-1 text-xs font-bold text-cyan-300">
-                    13 CHALLENGES
-                  </p>
-
-                </motion.div>
-
-                {/* DATA NODE 2 */}
-
-                <motion.div
-                  animate={{
-                    y: [0, 12, 0],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute right-[5%] top-[38%] rounded-xl border border-white/[0.08] bg-[#05090d]/80 px-4 py-3 backdrop-blur-md"
-                >
-
-                  <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/20">
-                    INTELLIGENCE
-                  </p>
-
-                  <p className="mt-1 text-xs font-bold text-cyan-300">
-                    AI × ANALYTICS
-                  </p>
-
-                </motion.div>
-
-                {/* DATA NODE 3 */}
-
-                <motion.div
-                  animate={{
-                    y: [0, -10, 0],
-                  }}
-                  transition={{
-                    duration: 4.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute bottom-[22%] left-[18%] rounded-xl border border-white/[0.08] bg-[#05090d]/80 px-4 py-3 backdrop-blur-md"
-                >
-
-                  <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/20">
-                    IMPACT
-                  </p>
-
-                  <p className="mt-1 text-xs font-bold text-cyan-300">
-                    REAL WORLD
-                  </p>
-
-                </motion.div>
-
-                {/* CONNECTION LINES */}
-
-                <div className="absolute left-[23%] top-[34%] h-px w-[27%] rotate-[28deg] bg-gradient-to-r from-transparent via-cyan-300/20 to-transparent" />
-
-                <div className="absolute right-[20%] top-[45%] h-px w-[28%] -rotate-[15deg] bg-gradient-to-r from-transparent via-cyan-300/20 to-transparent" />
-
-                <div className="absolute bottom-[31%] left-[31%] h-px w-[24%] -rotate-[30deg] bg-gradient-to-r from-transparent via-cyan-300/20 to-transparent" />
-
-              </motion.div>
-
-            </div>
-
-          </div>
-
-          {/* HERO FOOTER */}
-
-          <motion.div
-            initial={{
-              opacity: 0,
-            }}
-            animate={{
-              opacity: 1,
-            }}
-            transition={{
-              duration: 0.8,
-              delay: 1.2,
-            }}
-            className="absolute bottom-7 left-0 right-0 z-30"
-          >
-
-            <div className="mx-auto flex max-w-[1500px] items-center justify-between px-6">
-
-              <div className="hidden items-center gap-4 md:flex">
-
-                <span className="font-mono text-[8px] uppercase tracking-[0.3em] text-white/15">
-                  KPRCAS
-                </span>
-
-                <span className="h-px w-8 bg-white/10" />
-
-                <span className="font-mono text-[8px] uppercase tracking-[0.3em] text-white/15">
-                  COIMBATORE / INDIA
-                </span>
-
-              </div>
-
-              <button
-                onClick={() => {
-                  document
-                    .getElementById("introduction")
-                    ?.scrollIntoView({
-                      behavior: "smooth",
-                    });
-                }}
-                className="group ml-auto flex items-center gap-3"
-              >
-
-                <span className="font-mono text-[8px] uppercase tracking-[0.35em] text-white/20 transition group-hover:text-cyan-300">
-                  Scroll to explore
-                </span>
-
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/25 transition group-hover:border-cyan-300/30 group-hover:text-cyan-300">
-                  ↓
-                </span>
-
-              </button>
-
-            </div>
-
-          </motion.div>
-
-        </section>
-
-        {/* ===================================================
-            INTRODUCTION
-            =================================================== */}
-
-        <Introduction />
-
-        {/* ===================================================
-            ABOUT EVENT
-            =================================================== */}
-
-        <About />
-
-        {/* ===================================================
-            PARADOX
-            =================================================== */}
-
-        <Paradox />
-
-        {/* ===================================================
-            PROBLEM STATEMENTS
-            =================================================== */}
-
-        <Problems />
-
-        {/* ===================================================
-            RULES
-            =================================================== */}
-
-        <Rules />
-
-        {/* ===================================================
-            PRIZES
-            =================================================== */}
-
-        <Prizes />
-
-        {/* ===================================================
-            TIMELINE
-            =================================================== */}
-
-        <Timeline />
-
-        {/* ===================================================
-            TEAM
-            =================================================== */}
-
-        <Team />
-
-        {/* ===================================================
-            REGISTRATION
-            =================================================== */}
-
-        <Registration />
-
-        {/* ===================================================
-            CONTACT
-            =================================================== */}
-
-        <Contact />
-
-        {/* ===================================================
-            FOOTER
-            =================================================== */}
-
-        <footer className="border-t border-white/[0.06] px-6 py-10">
-
-          <div className="mx-auto flex max-w-[1400px] flex-col gap-8 md:flex-row md:items-center md:justify-between">
-
-            {/* BRAND */}
-
-            <div>
-
-              <button
-                onClick={() => {
-                  window.scrollTo({
-                    top: 0,
-                    behavior: "smooth",
-                  });
-                }}
-                className="text-xl font-black tracking-[-0.04em] text-white"
-              >
-                PARADOX
-                <span className="text-cyan-300">
-                  .
-                </span>
-              </button>
-
-              <p className="mt-2 font-mono text-[8px] uppercase tracking-[0.3em] text-white/15">
-                DataKthon / KPRCAS
+              <p className="font-mono text-[8px] font-bold uppercase tracking-[0.4em] text-[#b44735]">
+                A national data challenge
               </p>
 
             </div>
 
-            {/* FOOTER NAV */}
 
-            <div className="flex flex-wrap gap-5">
+            {/* HERO TITLE */}
 
-              <a
-                href="#home"
-                className="text-[9px] uppercase tracking-[0.2em] text-white/25 transition hover:text-cyan-300"
-              >
-                Home
-              </a>
+            <h1 className="mt-8 text-[clamp(4.2rem,11vw,10rem)] font-black leading-[0.76] tracking-[-0.085em]">
 
-              <a
-                href="#problems"
-                className="text-[9px] uppercase tracking-[0.2em] text-white/25 transition hover:text-cyan-300"
-              >
-                Problems
-              </a>
+              INDIA
+              <br />
 
-              <a
-                href="#rules"
-                className="text-[9px] uppercase tracking-[0.2em] text-white/25 transition hover:text-cyan-300"
-              >
-                Rules
-              </a>
+              <span className="font-serif font-normal italic text-[#355c4a]">
+                has data.
+              </span>
 
-              <a
-                href="#prizes"
-                className="text-[9px] uppercase tracking-[0.2em] text-white/25 transition hover:text-cyan-300"
-              >
-                Prizes
-              </a>
+            </h1>
 
-              <a
-                href="#timeline"
-                className="text-[9px] uppercase tracking-[0.2em] text-white/25 transition hover:text-cyan-300"
-              >
-                Timeline
-              </a>
 
-              <a
-                href="#registration"
-                className="text-[9px] uppercase tracking-[0.2em] text-white/25 transition hover:text-cyan-300"
-              >
-                Register
-              </a>
+            {/* HERO QUESTION */}
 
-              <a
-                href="#contact"
-                className="text-[9px] uppercase tracking-[0.2em] text-white/25 transition hover:text-cyan-300"
-              >
-                Contact
-              </a>
+            <h2 className="mt-10 max-w-3xl font-serif text-[clamp(2.2rem,5vw,5rem)] leading-[0.95] tracking-[-0.045em]">
+
+              But does it have{" "}
+
+              <span className="text-[#b44735]">
+                answers?
+              </span>
+
+            </h2>
+
+
+            {/* DESCRIPTION */}
+
+            <p className="mt-8 max-w-xl text-base leading-8 text-[#596158] md:text-lg">
+
+              India generates enormous
+              amounts of information every
+              day. PARADOX brings people,
+              data and real-world problems
+              together to turn that information
+              into meaningful solutions.
+
+            </p>
+
+
+            {/* SCROLL */}
+
+            <div className="mt-12 flex items-center gap-4">
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#cfc8ba]">
+
+                <span className="text-sm text-[#b44735]">
+                  ↓
+                </span>
+
+              </div>
+
+              <div>
+
+                <p className="font-mono text-[8px] font-bold uppercase tracking-[0.25em] text-[#17211b]">
+                  Enter the data
+                </p>
+
+                <p className="mt-1 font-mono text-[7px] uppercase tracking-[0.2em] text-[#7b8179]">
+                  Scroll to explore
+                </p>
+
+              </div>
 
             </div>
 
           </div>
 
-          {/* FOOTER BOTTOM */}
+        </div>
 
-          <div className="mx-auto mt-8 flex max-w-[1400px] flex-col justify-between gap-3 border-t border-white/[0.05] pt-6 md:flex-row">
+      </section>
 
-            <p className="font-mono text-[8px] uppercase tracking-[0.2em] text-white/10">
-              © 2026 PARADOX DATAKTHON
+
+      {/* =================================================
+          SCALE
+      ================================================= */}
+
+      <section
+        id="scale"
+        className="relative z-10 min-h-screen px-6 py-32 md:px-16 md:py-48"
+      >
+
+        <div className="mx-auto max-w-[1400px]">
+
+          <div className="grid gap-16 md:grid-cols-[0.8fr_1.2fr] md:items-end">
+
+            <div>
+
+              <p className="font-mono text-[8px] font-bold uppercase tracking-[0.35em] text-[#b44735]">
+                01 / The Scale
+              </p>
+
+              <div className="mt-8 h-px w-20 bg-[#cfc8ba]" />
+
+            </div>
+
+
+            <div>
+
+              <h2 className="text-[clamp(3.5rem,8vw,8rem)] font-black leading-[0.8] tracking-[-0.075em]">
+
+                13
+                <br />
+
+                <span className="font-serif font-normal italic text-[#355c4a]">
+                  real-world
+                </span>
+
+                <br />
+
+                challenges.
+
+              </h2>
+
+            </div>
+
+          </div>
+
+
+          {/* SCALE METRICS */}
+
+          <div className="mt-24 grid gap-px border border-[#cfc8ba] bg-[#cfc8ba] md:grid-cols-3">
+
+            <div className="bg-[#faf8f2] p-8 md:p-10">
+
+              <p className="font-mono text-[8px] uppercase tracking-[0.25em] text-[#7b8179]">
+                Across
+              </p>
+
+              <p className="mt-4 text-4xl font-black tracking-[-0.05em] text-[#17211b]">
+                INDIA
+              </p>
+
+            </div>
+
+
+            <div className="bg-[#faf8f2] p-8 md:p-10">
+
+              <p className="font-mono text-[8px] uppercase tracking-[0.25em] text-[#7b8179]">
+                Focus
+              </p>
+
+              <p className="mt-4 text-4xl font-black tracking-[-0.05em] text-[#355c4a]">
+                DATA
+              </p>
+
+            </div>
+
+
+            <div className="bg-[#faf8f2] p-8 md:p-10">
+
+              <p className="font-mono text-[8px] uppercase tracking-[0.25em] text-[#7b8179]">
+                Goal
+              </p>
+
+              <p className="mt-4 text-4xl font-black tracking-[-0.05em] text-[#b44735]">
+                IMPACT
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          PROBLEMS
+      ================================================= */}
+
+      <section
+        id="problems"
+        className="relative z-10 min-h-screen bg-[#e7e1d5] px-6 py-32 md:px-16 md:py-48"
+      >
+
+        <div className="mx-auto max-w-[1400px]">
+
+          <div className="max-w-4xl">
+
+            <p className="font-mono text-[8px] font-bold uppercase tracking-[0.35em] text-[#b44735]">
+              02 / Discover
             </p>
 
-            <p className="font-mono text-[8px] uppercase tracking-[0.2em] text-white/10">
-              DATA → INSIGHT → IMPACT
+            <h2 className="mt-8 text-[clamp(3rem,7vw,7rem)] font-black leading-[0.82] tracking-[-0.075em]">
+
+              THE PROBLEMS
+              <br />
+
+              ARE
+              <br />
+
+              <span className="font-serif font-normal italic text-[#355c4a]">
+                everywhere.
+              </span>
+
+            </h2>
+
+            <p className="mt-8 max-w-xl text-base leading-8 text-[#596158] md:text-lg">
+
+              Explore the network. Hover over
+              a region. Discover where the
+              challenges are concentrated and
+              uncover the questions hidden
+              inside the data.
+
             </p>
 
           </div>
 
-        </footer>
 
-      </div>
+          {/* INTERACTION GUIDE */}
+
+          <div className="mt-24 grid gap-px border border-[#cfc8ba] bg-[#cfc8ba] md:grid-cols-3">
+
+            <div className="bg-[#faf8f2] p-8 md:p-10">
+
+              <span className="font-mono text-xs font-bold text-[#b44735]">
+                01
+              </span>
+
+              <h3 className="mt-6 font-serif text-2xl text-[#17211b]">
+                Explore
+              </h3>
+
+              <p className="mt-4 text-sm leading-7 text-[#596158]">
+                Move across the data network
+                and discover regions with
+                active challenges.
+              </p>
+
+            </div>
+
+
+            <div className="bg-[#faf8f2] p-8 md:p-10">
+
+              <span className="font-mono text-xs font-bold text-[#b44735]">
+                02
+              </span>
+
+              <h3 className="mt-6 font-serif text-2xl text-[#17211b]">
+                Investigate
+              </h3>
+
+              <p className="mt-4 text-sm leading-7 text-[#596158]">
+                Select a region to uncover
+                the problems represented
+                by its data.
+              </p>
+
+            </div>
+
+
+            <div className="bg-[#faf8f2] p-8 md:p-10">
+
+              <span className="font-mono text-xs font-bold text-[#b44735]">
+                03
+              </span>
+
+              <h3 className="mt-6 font-serif text-2xl text-[#17211b]">
+                Solve
+              </h3>
+
+              <p className="mt-4 text-sm leading-7 text-[#596158]">
+                Turn the question into a
+                data-driven solution.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          PROBLEM INTELLIGENCE
+      ================================================= */}
+
+      <section
+        id="problem-intelligence"
+        className="relative z-10 min-h-screen bg-[#faf8f2] px-6 py-32 md:px-16 md:py-48"
+      >
+
+        <div className="mx-auto max-w-[1400px]">
+
+          <div className="mb-20">
+
+            <p className="font-mono text-[8px] font-bold uppercase tracking-[0.35em] text-[#b44735]">
+              03 / Problem Intelligence
+            </p>
+
+            <h2 className="mt-8 max-w-5xl text-[clamp(3rem,7vw,8rem)] font-black leading-[0.8] tracking-[-0.075em]">
+
+              FIND THE
+              <br />
+
+              <span className="font-serif font-normal italic text-[#355c4a]">
+                question.
+              </span>
+
+            </h2>
+
+            <p className="mt-8 max-w-2xl text-base leading-8 text-[#596158] md:text-lg">
+              Every challenge begins with
+              understanding the problem behind
+              the data.
+            </p>
+
+          </div>
+
+
+          {/* DYNAMIC PROBLEM CONTENT */}
+
+          <ProblemReveal
+            stateId={
+              selectedState?.id ??
+              null
+            }
+          />
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          HOW IT WORKS
+      ================================================= */}
+
+      <section
+        id="how-it-works"
+        className="relative z-10 bg-[#355c4a] px-6 py-32 text-[#faf8f2] md:px-16 md:py-48"
+      >
+
+        <div className="mx-auto max-w-[1400px]">
+
+          <p className="font-mono text-[8px] font-bold uppercase tracking-[0.35em] text-[#d6a84f]">
+            04 / How it works
+          </p>
+
+          <h2 className="mt-8 max-w-5xl font-serif text-[clamp(3rem,7vw,7rem)] leading-[0.85] tracking-[-0.055em]">
+
+            From
+
+            <span className="text-[#d6a84f]">
+              {" "}
+              problem
+            </span>
+
+            <br />
+
+            to
+
+            <span className="text-[#d6a84f]">
+              {" "}
+              possibility.
+            </span>
+
+          </h2>
+
+
+          {/* PROCESS */}
+
+          <div className="mt-24 grid gap-px border border-white/15 bg-white/10 md:grid-cols-4">
+
+            {[
+              {
+                number: "01",
+                title: "Choose",
+                text:
+                  "Find a problem that matters to you.",
+              },
+
+              {
+                number: "02",
+                title: "Understand",
+                text:
+                  "Study the context, data and constraints.",
+              },
+
+              {
+                number: "03",
+                title: "Build",
+                text:
+                  "Create a solution using data and technology.",
+              },
+
+              {
+                number: "04",
+                title: "Impact",
+                text:
+                  "Show how your solution could make a difference.",
+              },
+            ].map(
+              (item) => (
+                <div
+                  key={
+                    item.number
+                  }
+                  className="bg-[#355c4a] p-8 md:p-10"
+                >
+
+                  <p className="font-mono text-xs text-[#d6a84f]">
+                    {item.number}
+                  </p>
+
+                  <h3 className="mt-8 font-serif text-3xl">
+                    {item.title}
+                  </h3>
+
+                  <p className="mt-5 text-sm leading-7 text-white/65">
+                    {item.text}
+                  </p>
+
+                </div>
+              )
+            )}
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          FINAL CTA
+      ================================================= */}
+
+      <section
+        id="register"
+        className="relative z-10 flex min-h-screen items-center bg-[#b44735] px-6 py-32 text-[#faf8f2] md:px-16"
+      >
+
+        <div className="mx-auto w-full max-w-[1400px]">
+
+          <p className="font-mono text-[8px] font-bold uppercase tracking-[0.35em] text-[#f5d8d1]">
+            05 / The invitation
+          </p>
+
+          <h2 className="mt-10 max-w-6xl text-[clamp(4rem,10vw,10rem)] font-black leading-[0.78] tracking-[-0.085em]">
+
+            YOU SAW
+            <br />
+
+            THE
+            <br />
+
+            <span className="font-serif font-normal italic">
+              problem.
+            </span>
+
+          </h2>
+
+          <p className="mt-10 max-w-xl text-base leading-8 text-white/75 md:text-lg">
+            Now build the answer.
+          </p>
+
+
+          <button
+            type="button"
+            className="mt-12 inline-flex items-center gap-8 border border-white/50 bg-[#faf8f2] px-7 py-5 font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-[#b44735] transition-all duration-300 hover:bg-[#17211b] hover:text-[#faf8f2]"
+          >
+            Enter PARADOX
+
+            <span className="text-lg">
+              →
+            </span>
+
+          </button>
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          FOOTER
+      ================================================= */}
+
+      <footer className="relative z-10 bg-[#17211b] px-6 py-12 text-[#faf8f2] md:px-16">
+
+        <div className="mx-auto flex max-w-[1400px] flex-col justify-between gap-8 md:flex-row md:items-end">
+
+          <div>
+
+            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.35em]">
+              PARADOX
+            </p>
+
+            <p className="mt-2 font-mono text-[7px] uppercase tracking-[0.25em] text-white/45">
+              National Datathon
+            </p>
+
+          </div>
+
+          <p className="font-mono text-[7px] uppercase tracking-[0.25em] text-white/35">
+            Data → Questions → Impact
+          </p>
+
+        </div>
+
+      </footer>
 
     </main>
   );
